@@ -20,10 +20,10 @@ const BookSchema = new Schema({
     type: String,
     require: true
   },
-  genre: {
+  genre: [{
     type: Schema.Types.ObjectId,
     ref: 'Genre'
-  }
+  }]
 });
 
 BookSchema

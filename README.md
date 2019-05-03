@@ -119,3 +119,28 @@ mongodb+srv://ybq:<password>@cluster0-u9usk.mongodb.net/test?retryWrites=true
 * catalog/\<object\>/create: 添加新模型的表单（例如 /catalog/book/create）
 * catalog/\<object\>/<id>/update：更新具有 _id 字段值的特定模型的表单（例如 /catalog/book/584493c1f4887f06c0e67d37/update）。
 * catalog/\<object\>/<id>/delete：删除具有 _id 字段值的特定模型的表单（例如 /catalog/book/584493c1f4887f06c0e67d37/delete）。
+
+# 模板的使用
+
+不同的模板语言使用不同的方法，来定义布局和标记数据的占位符 —  一些使用 HTML 来定义布局，而另一些则使用可以编译为 HTML 的不同标记格式。Pug 是第二种类型；它使用 HTML 的表示形式，其中任何行中的第一个单词，通常表示HTML元素，后续行中的缩进，用于表示嵌套在这些元素中的任何内容。结果是一个页面定义直接转换为 HTML，但可以说更简洁，更容易阅读。
+
+## Pug模板语法
+
+文件映射典型 HTML 文件的结构，其中（几乎）每一行中的第一个单词是 HTML 元素，并且缩进用于指示嵌套元素。
+
+元素属性被定义在其关联元素之后的括号中。在括号内，属性定义在以逗号或空格分隔的属性名称和属性值对的列表中
+
+```pug
+script(type='text/javascript'), link(rel='stylesheet', href='/stylesheets/style.css')
+
+meta(name='viewport' content='width=device-width initial-scale=1')
+```
+
+所有属性的值都被转义（例如 “>” 等字符转换为 HTML 代码等效项，如“&gt;”），以防止注入 JavaScript 或跨站点脚本攻击。
+
+如果标记后跟着等号，则以下文本将被视为 JavaScript 表达式。
+
+```pug
+h1= title
+p= 'Evaluated and <em>escaped expression</em>:' + title
+```
