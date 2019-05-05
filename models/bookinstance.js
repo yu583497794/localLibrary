@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-
+const moment = require('moment');
 const BookInstanceSchema = new Schema({
   book: {
     type: Schema.Types.ObjectId,
@@ -15,7 +15,7 @@ const BookInstanceSchema = new Schema({
     type: String,
     require: true,
     enum: ['可供借阅', '馆藏维护', '已借出', '保留'],
-    defaut: '馆藏维护'
+    default: '馆藏维护'
   },
   due_back: {
     type: Date,
@@ -27,6 +27,12 @@ BookInstanceSchema
   .virtual('url')
   .get(function () {
     return '/catalog/bookinstance/' + this._id;
+  });
+
+BookInstanceSchema
+  .virtual('due_back_formatted')
+  .get(function () {
+    return moment(this.due_back).format('MMMM Do, YYYY');
   });
 
 module.exports = mongoose.model('BookInstance', BookInstanceSchema);

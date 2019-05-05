@@ -10,6 +10,6 @@ router.post('/:id/delete', book_instance_controller.book_instance_delete_post);
 router.get('/:id/update', book_instance_controller.book_instance_update_get);
 router.post('/:id/update', book_instance_controller.book_instance_update_post);
 router.get('/:id', book_instance_controller.book_instance_detail);
-router.get('/book_instances', book_instance_controller.book_instance_list);
+// router.get('/book_instances', book_instance_controller.book_instance_list);
 
 module.exports = router;

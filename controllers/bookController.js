@@ -69,13 +69,46 @@ exports.index = (req, res) => {
   })
 }
 // 显示完整的藏书列表
-exports.book_list = (req, res) => {
-  res.send('未实现：藏书列表');
+exports.book_list = (req, res, next) => {
+  Book.find({}, 'title author')
+    // populate() ，指定作者author字段 — 这将用完整的作者信息，替换存储的书本作者 id。
+    .populate('author')
+    .exec(function (err, list_books) {
+      res.render('book_list', {title: 'Book List', book_list: list_books});
+    });
 };
 
 // 为每位藏书显示详细信息的页面
-exports.book_detail = (req, res) => {
-  res.send('未实现：藏书详细信息：' + req.params.id);
+exports.book_detail = (req, res, next) => {
+  async function findBookDetail () {
+    let bookPromise = new Promise((resolve, reject) => {
+      Book.findById(req.params.id)
+        .populate('author')
+        .populate('genre')
+        .exec((err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        })
+    })
+    let bookInstancePromise = new Promise((resolve, reject) => {
+      BookInstance.find({book: req.params.id}, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      })
+    });
+    return {
+      book: await bookPromise,
+      book_instance: await bookInstancePromise
+    }
+  }
+  findBookDetail().then((result) => {
+    if (result.book == null) {
+      let err = new Error('Book not found');
+      err.status = 404;
+      return next(err);
+    }
+    res.render('book_detail', {title: 'Title', book: result.book, book_instance: result.book_instance});
+  }).catch(err => next(err));
 };
 
 // 由 GET 显示创建藏书的表单

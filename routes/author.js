@@ -10,6 +10,6 @@ router.post('/:id/delete', author_controller.author_delete_post);
 router.get('/:id/update', author_controller.author_update_get);
 router.post('/:id/update', author_controller.author_update_post);
 router.get('/:id', author_controller.author_detail);
-router.get('/authors', author_controller.author_list);
+// router.get('/authors', author_controller.author_list);
 
 module.exports = router;
