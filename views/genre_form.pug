@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1 #{title}
+  //- 如果action中的值为空，那么这个请求将由当前页面的路径来处理。
+  form(method='POST' action='')
+    div.form-group
+      label(for='name') 题材:
+      input#name.form-control(type='text' placeholder='奇幻，诗集等' name='name' value=(genre===undefined ? '' : genre.name)  required='true')
+    button.btn.btn-primary(type='submit') 提交
+
+  if errors
+    ul
+      for error in errors
+        li!= error.msg

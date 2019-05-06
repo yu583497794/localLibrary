@@ -1,6 +1,6 @@
 # 概述
 
-本项目是利用Express框架搭建的本地图书馆服务器
+本项目是利用[Express框架](http://expressjs.com.cn/)搭建的本地图书馆服务器
 
 ## 运用到的技术
 
@@ -8,11 +8,12 @@
 
 （全局的）Express 应用生成器，可用于创建遵循 MVC模式 的 Express 应用框架。它不是必备的，因为无需这个工具就可以创建 Express 应用（或相同架构布局或依赖的 Express 应用）。但我们还是会使用它，因为它更容易上手，还有助于应用结构的模块化管理。
 
-```cli
+```
 $ sudo npm install express-generator -g
 ```
 
 ### 视图引擎
+
 [Pub](https://pugjs.org/api/getting-started.html)
 
 使用 --view 选择视图（模板）引擎，并且/或者使用 --css 选择 CSS 生成引擎。
@@ -83,6 +84,34 @@ mongodb+srv://ybq:<password>@cluster0-u9usk.mongodb.net/test?retryWrites=true
 
 密码中带有url的关键字符?, 造成解析失败
 
+### Moment.js
+
+JavaScript 日期处理类库
+
+1. 日期格式化
+
+```js
+moment().format('MMMM Do YYYY, h:mm:ss a'); // 五月 6日 2019, 11:23:17 上午
+moment().format('dddd');                    // 星期一
+moment().format("MMM Do YY");               // 5月 6日 19
+moment().format('YYYY [escaped] YYYY');     // 2019 escaped 2019
+moment().format();                          // 2019-05-06T11:23:17+08:00
+```
+
+2. 相对时间
+
+```
+moment("20111031", "YYYYMMDD").fromNow(); // 8 年前
+moment("20120620", "YYYYMMDD").fromNow(); // 7 年前
+moment().startOf('day').fromNow();        // 11 小时前
+moment().endOf('day').fromNow();          // 13 小时内
+moment().startOf('hour').fromNow();       // 25 分钟前
+```
+
+### 表单验证 [express-validator](https://express-validator.github.io/docs/)
+
+该验证器作为express.js的中间件，包含了validator.js 验证器和sanitizer清除器函数
+
 ### [node async 模组](http://caolan.github.io/async/docs.html)
 
 * async.parallel() 执行必须并行执行的任何操作。
@@ -143,4 +172,56 @@ meta(name='viewport' content='width=device-width initial-scale=1')
 ```pug
 h1= title
 p= 'Evaluated and <em>escaped expression</em>:' + title
+```
+
+# 表单处理
+
+## 表单处理流程
+
+1. 路由将请求发送到控制器函数；
+2. 控制器函数执行所需的任何数据库操作，包括从模型中读取数据
+3. 服务器还需要能够处理用户提供的数据，并在出现任何问题时，重新显示带有错误信息的表单。
+4. 生成并返回HTML页面
+
+![表单处理流程](https://mdn.mozillademos.org/files/14478/Web%20server%20form%20handling.png)
+
+构成处理代码所需要做的主要是：
+
+1. 在用户第一次请求时显示默认表单。
+  
+* 表单可能包含空白字段（例如，如果您正在创建新记录），或者可能预先填充了初始值（例如，如果您要更改记录，或者具有有用的默认初始值）。
+
+2. 接收用户提交的数据，通常是在HTTP POST请求中。
+3. 验证并清理数据。
+4. 如果任何数据无效，请重新显示表单 - 这次使用用户填写的任何值，和问题字段的错误消息。
+5. 如果所有数据都有效，请执行所需的操作（例如，将数据保存在数据库中，发送通知电子邮件，返回搜索结果，上传文件等）
+6. 完成所有操作后，将用户重定向到另一个页面。
+
+表格处理代码，通常使用GET路由，以实现表单的初始显示，以及POST路由到同一路径，以处理表单数据的验证和处理。
+
+## 验证和清理
+
+[express-validator](https://www.npmjs.com/package/express-validator)
+[express-validator document](https://express-validator.github.io/docs/)
+
+```js
+const { check, validationResult } = require('express-validator/check');
+
+app.post('/user', [
+  // username must be an email
+  check('username').isEmail(),
+  // password must be at least 5 chars long
+  check('password').isLength({ min: 5 })
+], (req, res) => {
+  // Finds the validation errors in this request and wraps them in an object with handy functions
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
+  User.create({
+    username: req.body.username,
+    password: req.body.password
+  }).then(user => res.json(user));
+});
 ```

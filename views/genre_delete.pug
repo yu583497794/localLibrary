@@ -1,0 +1,14 @@
+extends layout
+block content
+  h1 Genre: #{genre.name}
+  if (genre_books.length === 0)
+    p Do you really want to delete this Genre?
+    form(action='' method='POST')
+      button.btn.btn-primary(type='submit') Delete
+  else
+    p Delete the following book before delete this Genre
+    h2 Books
+    ul
+      for book in genre_books
+        li
+          a(href=book.url)  #{book.title}

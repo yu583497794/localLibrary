@@ -1,5 +1,7 @@
 const BookInstance = require('../models/bookinstance');
-
+const { body, validationResult } = require('express-validator/check');
+const { sanitizeBody }  = require('express-validator/filter');
+const Book = require('../models/book')
 // 显示完整的藏书范本列表
 exports.book_instance_list = (req, res) => {
   BookInstance.find()
@@ -27,22 +29,74 @@ exports.book_instance_detail = (req, res) => {
 
 // 由 GET 显示创建藏书范本的表单
 exports.book_instance_create_get = (req, res) => {
-  res.send('未实现：藏书范本创建表单的 GET');
+  Book.find({}, 'title')
+    .exec((err, results) => {
+      if(err) return next(err);
+      res.render('bookinstance_form', {title: 'Create Book Instance', book_list: results})
+    })
 };
 
 // 由 POST 处理藏书范本创建操作
-exports.book_instance_create_post = (req, res) => {
-  res.send('未实现：创建藏书范本的 POST');
-};
+exports.book_instance_create_post = [
+  body('book', 'Book must be specified').isLength({
+    min: 1
+  }).trim(),
+  body('imprint', 'Imprint must be specified').isLength({
+    min: 1
+  }).trim(),
+  body('due_back', 'Invalid date').optional({
+    checkFalsy: true
+  }).isISO8601(),
+  sanitizeBody('book').trim().escape(),
+  sanitizeBody('imprint').trim().escape(),
+  sanitizeBody('status').trim().escape(),
+  sanitizeBody('due_back').toDate(),
+  (req, res, next) => {
+     const errors = validationResult(req);
+     var bookinstance = new BookInstance({
+       book: req.body.book,
+       imprint: req.body.imprint,
+       status: req.body.status,
+       due_back: req.body.due_back
+     });
+     if(!errors.isEmpty()) {
+      Book.find({}, 'title')
+        .exec((err, results) => {
+          if (err) return next(err)
+          res.render('bookinstance_form', {title: 'Create Book Instance', book_list: results, errors: errors.array(), selected_book: bookinstance.book._id, bookinstance: bookinstance})
+        })
+     } else {
+      bookinstance.save(err => {
+        if(err) return next(err);
+        res.redirect(bookinstance.url);
+      })
+     }
+  }
+]
 
 // 由 GET 显示删除藏书范本的表单
 exports.book_instance_delete_get = (req, res) => {
-  res.send('未实现：藏书范本删除表单的 GET');
+  BookInstance.findById(req.params.id)
+    .populate('book', 'title')
+    .exec((err, result) => {
+      if (err) return next(err)
+      if (!result) {
+        res.redirect('/catalog/bookinstances');
+      } else {
+        res.render('bookinstance_delete', {
+          title: 'Delete Book Copy',
+          book_instance: result
+        })
+      }
+    })
 };
 
 // 由 POST 处理藏书范本删除操作
 exports.book_instance_delete_post = (req, res) => {
-  res.send('未实现：删除藏书范本的 POST');
+  BookInstance.findByIdAndRemove(req.params.id, (err) => {
+    if (err) return next(err);
+    res.redirect('/catalog/bookinstances');
+  })
 };
 
 // 由 GET 显示更新藏书范本的表单

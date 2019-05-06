@@ -1,0 +1,32 @@
+extends layout
+
+block content
+  h1= title
+
+  form(action='' method='POST')
+    div.form-group
+      label(for='book') Book:
+      select(type='select' name='book')
+        for book in book_list
+          if bookinstance
+            option(value=book._id selected=(book._id.toString() == bookinstance.book.toString() ? 'selected' : false))  #{book.title}
+          else
+            option(value=book._id) #{book.title}
+    div.form-group
+      label(for='imprint')
+      input#imprint.form-control(type='text' placeholder='Publisher and date information' name='imprint' value=(undefined === bookinstance ? '' : bookinstance.imprint))
+    div.form-group
+      label(for='due_back') Date when book available:
+      input#due_back.form-control(type='date' name='due_back' value=(undefined===bookinstance ? '' : bookinstance.due_back))  
+    div.form-group
+      label(for='status')
+      select#status.form-control(name='status')
+        option(value='可供借阅') 可供借阅
+        option(value='馆藏维护') 馆藏维护
+        option(value='已借出') 已借出
+        option(value='保留') 保留
+    button.btn.btn-primary(type='submit') 提交
+  if errors
+    ul
+      for error in errors
+        li!=error.msg

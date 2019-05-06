@@ -1,0 +1,17 @@
+extends layout
+block content
+  h1 Book: #{book.title}
+  if (book_instances.length === 0)
+    p Do you really want to delete this Book?
+    form(action='' method='POST')
+      button.btn.btn-primary(type='submit') Delete
+  else
+    p Delete the following bookinstances before delete this Book
+    h2 Book Instances
+    ul
+      for book_instance in book_instances
+        li
+          a(href=book_instance.url)  #{book_instance._id}
+          | (
+          | #{book_instance.status}
+          |)

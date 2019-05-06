@@ -1,0 +1,16 @@
+extends layout
+block content
+  h1 Author: #{author.name}
+  div #{author.lifespan}
+  if (author_books.length === 0)
+    p Do you really want to delete this author?
+    form(action='' method='POST')
+      button.btn.btn-primary(type='submit') Delete
+  else
+    p Delete the following books defore delete this author.
+    h2 Books
+    ul
+      for book in author_books
+        li
+          a(href=book.url) #{book.title}
+          p #{book.summary}
