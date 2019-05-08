@@ -98,13 +98,68 @@ exports.book_instance_delete_post = (req, res) => {
     res.redirect('/catalog/bookinstances');
   })
 };
-
+async function findBookInstanceBooks(id) {
+  let bookinstancePromise = new Promise((resolve,  reject) => {
+    BookInstance.findById(id, (err, result) => {
+      if (err) reject(err);
+      resolve(result);
+    });
+  });
+  let bookPromise = new Promise((resolve, reject) => {
+    Book.find((err, results) => {
+      if (err) reject(err);
+      resolve(results);
+    })
+  });
+  return {
+    book_instance: await bookinstancePromise,
+    book_list: await bookPromise
+  }
+}
 // 由 GET 显示更新藏书范本的表单
-exports.book_instance_update_get = (req, res) => {
-  res.send('未实现：藏书范本更新表单的 GET');
+exports.book_instance_update_get = (req, res, next) => {
+  findBookInstanceBooks(req.params.id).then(result => {
+    if (!result.book_instance) res.redirect('/catalog/bookinstances');
+    res.render('bookinstance_form', {title: 'Update Book Instance', bookinstance: result.book_instance, book_list: result.book_list});
+  })
 };
 
 // 由 POST 处理藏书范本更新操作
-exports.book_instance_update_post = (req, res) => {
-  res.send('未实现：更新藏书范本的 POST');
-};
+exports.book_instance_update_post = [
+  body('book', 'Book must be specified').isLength({min: 1}).trim(),
+  body('imprint', 'Imprint must be specified').isLength({min: 1}).trim(),
+  body('due_back', 'Invalid date').optional({checkFalsy: true}).isISO8601(),
+  sanitizeBody('book').trim().escape(),
+  sanitizeBody('imprint').trim().escape(),
+  sanitizeBody('status').trim().escape(),
+  sanitizeBody('due_back').toDate(),
+  (req, res, next) => {
+    let errors = validationResult(req);
+    if (req.body.due_back === null) {
+      req.body.due_back  = new Date()
+    }
+    let book_instance = new BookInstance({
+      book: req.body.book,
+      imprint: req.body.imprint,
+      due_back: req.body.due_back,
+      status: req.body.status,
+      _id: req.params.id
+    })
+    if (!errors.isEmpty()) {
+      findBookInstanceBooks(req.params.id).then(result => {
+        res.render('bookinstance_form', {
+          title: 'Update Book Instance',
+          bookinstance: result.book_instance,
+          book_list: result.book_list,
+          errors: errors.array()
+        })
+      }).catch(err => next(err))
+      return;
+    } else {
+      BookInstance.findByIdAndUpdate(req.params.id, book_instance, {}, (err, result) => {
+        if(err) return next(err);
+        res.redirect(result.url);
+      })
+    }
+  }
+];

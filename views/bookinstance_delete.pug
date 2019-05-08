@@ -1,7 +1,9 @@
 extends layout
 block content
-  h1 Book Copy: #{book_instance.book.title}
-  if (genre_books.length === 0)
-    p Do you really want to delete this Book Copy?
-    form(action='' method='POST')
-      button.btn.btn-primary(type='submit') Delete
+  h1 Book Copy: 
+    a(href=book_instance.book.url) #{book_instance.book.title}
+  h2 ID: 
+    a(href=book_instance.url) #{book_instance._id}
+  p Do you really want to delete this Book Copy?
+  form(action='' method='POST')
+    button.btn.btn-primary(type='submit') Delete

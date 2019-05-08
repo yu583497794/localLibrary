@@ -139,11 +139,37 @@ exports.genre_delete_post = (req, res) => {
 };
 
 // 由 GET 显示更新题材的表单
-exports.genre_update_get = (req, res) => {
-  res.send('未实现：题材更新表单的 GET');
+exports.genre_update_get = (req, res, next) => {
+  Genre.findById(req.params.id, (err, result) => {
+    if (err) return next(err);
+    res.render('genre_form', {title: 'Update Genre', genre: result});
+  })
 };
 
 // 由 POST 处理题材更新操作
-exports.genre_update_post = (req, res) => {
-  res.send('未实现：更新题材的 POST');
-};
+exports.genre_update_post = [
+  body('name').isLength({min: 1}).trim(),
+  sanitizeBody('name').trim().escape(),
+  (req, res, next) =>  {
+    let errors = validationResult(req);
+    let genre = new  Genre({
+      name: req.body.name,
+      _id: req.params.id
+    });
+    if (!errors.isEmpty()) {
+      Genre.findById(req.params.id, (err, result) => {
+        if (err) return next(err);
+        res.render('genre_form', {
+          title: 'Update Genre',
+          genre: result,
+          errors: errors.array()
+        });
+      });
+    } else {
+      Genre.findByIdAndUpdate(req.params.id, genre, {}, (err, result) => {
+        if (err) return next(err);
+        res.redirect(result.url);
+      })
+    }
+  }
+]

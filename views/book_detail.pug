@@ -6,7 +6,7 @@ block content
   p #[strong Author:]
     a(href=book.author.url) #{book.author.name}
   p #[strong Summary:] #{book.summary}
-  p #[strong ISBN:] #{book.isbn}
+  p #[strong ISBN:] #{book.ISBN}
   p #[strong Genre:]&nbsp;
     each val, index in book.genre
       a(href=val.url) #{val.name}
@@ -35,3 +35,5 @@ block content
   hr
   p
     a(href=book.url + '/delete') Delete this book
+  p
+    a(href=book.url + '/update') Update this book

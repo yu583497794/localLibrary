@@ -111,7 +111,7 @@ exports.book_detail = (req, res, next) => {
     res.render('book_detail', {title: 'Title', book: result.book, book_instance: result.book_instance});
   }).catch(err => next(err));
 };
-async function findExistAuthorGenre() {
+async function findAuthorsGenres() {
   let authorPromise = new Promise((resolve, reject) => {
     Author.find((err, results) => {
       if (err) reject(err);
@@ -131,7 +131,7 @@ async function findExistAuthorGenre() {
 }
 // 由 GET 显示创建藏书的表单
 exports.book_create_get = (req, res, next) => {
-  findExistAuthorGenre().then(result => {
+  findAuthorsGenres().then(result => {
     res.render('book_form', {title: 'Create Book', authors: result.authors, genres: result.genres})
   }).catch(err => next(err))
 };
@@ -160,7 +160,7 @@ exports.book_create_post = [
       title: req.body.title,
       author: req.body.author,
       summary: req.body.summary,
-      isbn: req.body.isbn,
+      ISBN: req.body.isbn,
       genre: req.body.genre
     });
     if (!errors.isEmpty()) {
@@ -230,13 +230,86 @@ exports.book_delete_post = (req, res) => {
     }
   }).catch(err => next(err));
 };
-
+async function findBookAuthorsGenres(id) {
+  let bookPromise = new Promise((resolve, reject) => {
+    Book.findById(id, (err, result) => {
+      if (err) reject(err);
+      resolve(result);
+    })
+  })
+  return {
+    book: await bookPromise,
+    other: await findAuthorsGenres()
+  }
+}
 // 由 GET 显示更新藏书的表单
-exports.book_update_get = (req, res) => {
-  res.send('未实现：藏书更新表单的 GET');
+exports.book_update_get = (req, res, next) => {
+  findBookAuthorsGenres(req.params.id).then(result => {
+    if(result.book  === null) {
+      let err = new Error('Book not found');
+      err.status = 404;
+      return next(err);
+    }
+    console.log(result.book)
+    for (let all_g_iter = 0; all_g_iter < result.other.genres.length; all_g_iter++) {
+      for(let book_g_iter = 0; book_g_iter < result.book.genre.length; book_g_iter++) {
+        if (result.other.genres[all_g_iter]._id.toString() === result.book.genre[book_g_iter]._id.toString()) {
+          result.other.genres[all_g_iter].checked = 'true';
+        }
+      }
+    }
+    res.render('book_form', {title: 'Update Book', authors: result.other.authors, genres: result.other.genres, book: result.book})
+  }).catch(err => next(err))
 };
 
 // 由 POST 处理藏书更新操作
-exports.book_update_post = (req, res) => {
-  res.send('未实现：更新藏书的 POST');
-};
+exports.book_update_post = [
+  (req, res, next) => {
+    if(!Array.isArray(req.body.genre)) {
+      if (typeof req.body.genre === 'undefined') {
+        req.body.genre = [];
+      } else {
+        req.body.genre = new Array(req.body.genre);
+      }
+    }
+    next();
+  },
+  body('title', '书名不能为空').isLength({min: 1}).trim(),
+  body('author', '作者不能为空').isLength({min: 1}).trim(),
+  body('summary', '概述不能为空').isLength({min: 1}).trim(),
+  body('isbn', 'ISBN不能为空').isLength({min: 1}).trim(),
+
+  sanitizeBody('title').trim().escape(),
+  sanitizeBody('author').trim().escape(),
+  sanitizeBody('summary').trim().escape(),
+  sanitizeBody('isbn').trim().escape(),
+  sanitizeBody('genre.*').trim().escape(),
+  
+  (req, res, next) => {
+    let errors = validationResult(req);
+
+    var book = new Book({
+      title: req.body.title,
+      author: req.body.author,
+      summary: req.body.summary,
+      ISBN: req.body.isbn,
+      genre: (typeof req.body.genre === 'undefined') ? [] : req.body.genre,
+      _id: req.params.id
+    })
+
+    if (!errors.isEmpty()) {
+      findAuthorsGenres().then(result => {
+        for(let i = 0; i < result.genres.length; i++) {
+          if (book.genre.indexOf(result.genres[i]._id) > -1) result.genres[i].checked = 'true'
+        }
+        res.render('book_form', {title: 'Update Book', authors: result.authors, genres: result.genres, book: book, errors: errors.array()});
+      }).catch(err => next(err))
+      return;
+    } else {
+      Book.findByIdAndUpdate(req.params.id, book, {}, (err, result) =>  {
+        if (err) return next(err);
+        res.redirect(result.url);
+      })
+    }
+  }
+];
